@@ -8,8 +8,6 @@ abstract class AdjustToEnvAbstract
 
     protected $changed = false;
 
-    protected $reversed = false;
-
     public function __construct($info)
     {
         $this->info = $info;
