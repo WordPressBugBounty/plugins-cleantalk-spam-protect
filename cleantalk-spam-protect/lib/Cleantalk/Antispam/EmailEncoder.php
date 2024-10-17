@@ -3,6 +3,8 @@
 namespace Cleantalk\Antispam;
 
 use Cleantalk\ApbctWP\Variables\Cookie;
+use Cleantalk\ApbctWP\Variables\Server;
+use Cleantalk\Common\TT;
 use Cleantalk\Templates\Singleton;
 use Cleantalk\ApbctWP\Variables\Post;
 
@@ -44,7 +46,6 @@ class EmailEncoder
     private $attribute_exclusions_signs = array(
         'input' => array('placeholder', 'value'),
         'img' => array('alt', 'title'),
-        'a' => array('aria-label')
     );
     /**
      * @var string[]
@@ -67,6 +68,8 @@ class EmailEncoder
     private $temp_content;
     protected $has_connection_error;
     protected $privacy_policy_hook_handled = false;
+    protected $aria_regex = '/aria-label.?=.?[\'"].+?[\'"]/';
+    protected $aria_matches = array();
 
     /**
      * @inheritDoc
@@ -140,9 +143,16 @@ class EmailEncoder
             return $content;
         }
 
+        if ( static::skipEncodingOnHooks() ) {
+            return $content;
+        }
+
         if ( $this->hasContentExclusions($content) ) {
             return $content;
         }
+
+        // modify content to prevent aria-label replaces by hiding it
+        $content = $this->modifyAriaLabelContent($content);
 
         //will use this in regexp callback
         $this->temp_content = $content;
@@ -167,6 +177,10 @@ class EmailEncoder
                 return $this->encodePlainEmail($matches[0]);
             }
         }, $content);
+
+        // modify content to turn back aria-label
+        $replacing_result = $this->modifyAriaLabelContent($replacing_result, true);
+
         //please keep this var (do not simplify the code) for further debug
         return $replacing_result;
     }
@@ -471,6 +485,32 @@ class EmailEncoder
         return false;
     }
 
+    /**
+     * Modify content to skip aria-label cases correctly.
+     * @param string $content
+     * @param bool $reverse
+     *
+     * @return string
+     */
+    private function modifyAriaLabelContent($content, $reverse = false)
+    {
+        if ( !$reverse ) {
+            $this->aria_matches = array();
+            //save match
+            preg_match($this->aria_regex, $content, $this->aria_matches);
+            if (empty($this->aria_matches)) {
+                return $content;
+            }
+            //replace with temp
+            return preg_replace($this->aria_regex, 'ct_temp_aria', $content);
+        }
+        if ( !empty($this->aria_matches[0]) ) {
+            //replace temp with match
+            return preg_replace('/ct_temp_aria/', $this->aria_matches[0], $content);
+        }
+        return $content;
+    }
+
     public function bufferOutput()
     {
         global $apbct;
@@ -485,5 +525,31 @@ class EmailEncoder
             });
             $this->privacy_policy_hook_handled = true;
         }
+    }
+
+    /**
+     * Skip encoder run on hooks.
+     *
+     * 1. Applies filter "apbct_hook_skip_email_encoder_on_url_list" to get modified list of URI chunks that needs to skip.
+     * @return bool
+     */
+    private static function skipEncodingOnHooks()
+    {
+        $skip_encode = false;
+        $url_chunk_list = array();
+
+        // Apply filter "apbct_hook_skip_email_encoder_on_url_list" to get the URI chunk list.
+        $url_chunk_list = apply_filters('apbct_skip_email_encoder_on_uri_chunk_list', $url_chunk_list);
+
+        if ( !empty($url_chunk_list) && is_array($url_chunk_list) ) {
+            foreach ($url_chunk_list as $chunk) {
+                if (is_string($chunk) && strpos(TT::toString(Server::get('REQUEST_URI')), $chunk) !== false) {
+                    $skip_encode = true;
+                    break;
+                }
+            }
+        }
+
+        return $skip_encode;
     }
 }

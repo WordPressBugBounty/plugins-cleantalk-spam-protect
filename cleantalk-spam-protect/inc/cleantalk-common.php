@@ -711,6 +711,33 @@ function apbct_email_check_before_post()
 }
 
 /**
+ * Checking email before POST
+ */
+function apbct_email_check_exist_post()
+{
+    global $apbct;
+    $email = trim(TT::toString(Post::get('email')));
+    $api_key = $apbct->api_key;
+
+    if ( $email && $api_key ) {
+        $result = \Cleantalk\ApbctWP\API::methodEmailCheckExist($email, $api_key);
+        if ( isset($result['result']) ) {
+            $text_result = '';
+            if ( $result['result'] != 'EXISTS' ) {
+                $text_result = __('The email doesn`t exist, double check the address. Anti-Spam by CleanTalk.', 'cleantalk-spam-protect');
+            } else {
+                $text_result = __('The email exists and is good to use! Anti-Spam by CleanTalk', 'cleantalk-spam-protect');
+            }
+            $result['text_result'] = $text_result;
+            die(json_encode(array('result' => $result)));
+        }
+
+        die(json_encode(array('error' => 'ERROR_CHECKING_EMAIL')));
+    }
+    die(json_encode(array('error' => 'EMPTY_DATA')));
+}
+
+/**
  * Get ct_get_checkjs_value
  *
  * @param bool $random_key
@@ -1041,17 +1068,13 @@ function ct_delete_spam_comments()
  * Get data from an ARRAY recursively
  *
  * @param array $arr
- * @param array $message
- * @param null|string $email
- * @param array $nickname
- * @param null $subject
- * @param bool $contact
- * @param string $prev_name
+ * @param string $email
+ * @param string|array $nickname
  *
  * @return array
  * @deprecated Use ct_gfa()
  */
-function ct_get_fields_any($arr, $email = null, $nickname = array('nick' => '', 'first' => '', 'last' => ''))
+function ct_get_fields_any($arr, $email = '', $nickname = '')
 {
     if ( is_array($nickname) ) {
         $nickname_str = '';
@@ -1579,12 +1602,13 @@ function apbct_clear_query_from_service_fields($query_string, $service_field_nam
 /**
  * Main entry function to collect no cookie data.
  */
-function apbct_form__get_no_cookie_data($preprocessed_data = null)
+function apbct_form__get_no_cookie_data($preprocessed_data = null, $need_filter = true)
 {
     global $apbct;
     $flag = null;
     $no_cookie_data = apbct_check_post_for_no_cookie_data($preprocessed_data);
-    if ( !empty($no_cookie_data['mapping']) ) {
+
+    if ( $need_filter && !empty($no_cookie_data['mapping']) ) {
         apbct_filter_post_no_cookie_data($no_cookie_data['mapping']);
     }
     if ( $no_cookie_data && !empty($no_cookie_data['data']) && $apbct->data['cookies_type'] === 'none' ) {
