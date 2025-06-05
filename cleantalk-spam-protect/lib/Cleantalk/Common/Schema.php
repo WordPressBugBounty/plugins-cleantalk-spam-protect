@@ -66,7 +66,6 @@ class Schema
         'sessions' => array(
             'id' => 'VARCHAR(16) NOT NULL',
             'value' => 'TEXT NULL DEFAULT NULL',
-            'last_update' => 'DATETIME NULL DEFAULT NULL',
             '__indexes' => 'PRIMARY KEY (`id`(16))',
             '__createkey' => 'VARCHAR(16) NOT NULL primary KEY FIRST'
         ),

@@ -162,7 +162,6 @@ class UsersChecker extends Checker
      */
     private static function removeUsersWithoutIPEmail(array $users)
     {
-        global $apbct;
         foreach ($users as $index => $user) {
             if ( (bool)get_user_meta($user->ID, 'ct_bad') === true ) {
                 delete_user_meta($user->ID, 'ct_marked_as_spam');
@@ -170,11 +169,9 @@ class UsersChecker extends Checker
                 continue;
             }
 
-            $ip_from_keeper = $apbct->login_ip_keeper->getIP($user->ID);
-            $ip_from_keeper = null !== $ip_from_keeper
-                ? $ip_from_keeper
-                : false;
-            $user_ip    = $ip_from_keeper;
+            $user_meta = self::getUserMeta($user->ID);
+            $ip_of_user_meta = TT::getArrayValueAsString($user_meta, 'ip');
+            $user_ip    = ! empty($ip_of_user_meta) ? trim($ip_of_user_meta) : false;
             $user_email = ! empty($user->user_email) ? trim($user->user_email) : false;
 
             // Validate IP and Email
@@ -491,7 +488,6 @@ class UsersChecker extends Checker
      */
     public static function ctGetCsvFile()
     {
-        global $apbct;
         AJAXService::checkNonceRestrictingNonAdmins('security');
 
         $text = 'login,email,ip' . PHP_EOL;
@@ -509,15 +505,18 @@ class UsersChecker extends Checker
 
         $u = get_users($params);
         foreach ( $u as $iValue ) {
-            // gain IP from keeper
-            $ip_from_keeper = $apbct->login_ip_keeper->getIP($iValue->ID);
-            $ip_from_keeper = null !== $ip_from_keeper
-                ? $ip_from_keeper
-                : 'N/A';
+            // gain IP from meta session_tokens
+            $ip_of_user_meta = 'N/A';
+            $user_meta_session_tokens = get_user_meta($iValue->ID, 'session_tokens', true);
+            if (!empty($user_meta_session_tokens) && is_array($user_meta_session_tokens)) {
+                $user_meta_array = reset($user_meta_session_tokens);
+                $user_meta_array = !empty($user_meta_array) && is_array($user_meta_array) ? $user_meta_array : false;
+                $ip_of_user_meta = $user_meta_array ? TT::getArrayValueAsString($user_meta_array, 'ip') : $ip_of_user_meta;
+            }
 
             $text .= $iValue->user_login . ',';
             $text .= $iValue->data->user_email . ',';
-            $text .= $ip_from_keeper;
+            $text .= $ip_of_user_meta;
             $text .= PHP_EOL;
         }
 
@@ -536,7 +535,7 @@ class UsersChecker extends Checker
     {
         AJAXService::checkNonceRestrictingNonAdmins('security');
 
-        global $wpdb, $apbct;
+        global $wpdb;
 
         //* TEST DELETION
         if ( ! empty(Post::get('delete')) ) {
@@ -556,7 +555,7 @@ class UsersChecker extends Checker
         }
 
         // TEST INSERTION
-        $to_insert = 50;
+        $to_insert = 500;
         $query = 'SELECT network FROM `' . APBCT_TBL_FIREWALL_DATA . '` LIMIT ' . $to_insert . ';';
 
         $result    = $wpdb->get_results(
@@ -590,7 +589,7 @@ class UsersChecker extends Checker
                 }
 
                 update_user_meta($curr_user->ID, 'session_tokens', array($rnd => array('ip' => $ips[$i])));
-                $apbct->login_ip_keeper->addUserIP($curr_user);
+
                 if ( is_int($user_id) ) {
                     $inserted++;
                 }
@@ -607,7 +606,7 @@ class UsersChecker extends Checker
     {
         AJAXService::checkNonceRestrictingNonAdmins('security');
 
-        global $wpdb, $apbct;
+        global $wpdb;
 
         $r = self::getCountSpammers();
 
@@ -728,6 +727,23 @@ class UsersChecker extends Checker
         }
 
         return (int) $count_bad;
+    }
+
+    /**
+     * @param $user_id
+     *
+     * @return array
+     */
+    public static function getUserMeta($user_id)
+    {
+        $user_meta = get_user_meta($user_id, 'session_tokens', true);
+
+        if ( is_array($user_meta) ) {
+            $user_meta = array_values($user_meta);
+            return reset($user_meta);
+        }
+
+        return array();
     }
 
     /**

@@ -57,15 +57,11 @@ class AltSessions
         );
 
         return $wpdb->query($wpdb->prepare(
-            "INSERT INTO " . APBCT_TBL_SESSIONS . " (id, value, last_update)
-            VALUES (%s, %s, %s) 
-            ON DUPLICATE KEY UPDATE 
-                value = VALUES(value),
-                last_update = %s",
+            "INSERT INTO " . APBCT_TBL_SESSIONS . " (id, value) 
+            VALUES (%s, %s) 
+            ON DUPLICATE KEY UPDATE value = VALUES(value)",
             $data['id'],
-            $data['value'],
-            date('Y-m-d H:i:s'),
-            date('Y-m-d H:i:s')
+            $data['value']
         ));
     }
 
@@ -188,7 +184,6 @@ class AltSessions
             $wpdb->query(
                 'DELETE FROM `' . $table . '`
                 WHERE last_update < NOW() - INTERVAL ' . APBCT_SEESION__LIVE_TIME . ' SECOND
-                OR last_update IS NULL
                 LIMIT 100000;'
             );
         }

@@ -63,7 +63,8 @@ class IntegrationsByClass
             }
 
             // Public work
-            if ($integration->isSkipIntegration()) {
+            $skip_integration = $integration->isSkipIntegration();
+            if ($skip_integration) {
                 continue;
             }
 
@@ -73,13 +74,6 @@ class IntegrationsByClass
 
     private function isPluginActive($plugin_path)
     {
-        if (is_array($plugin_path)) {
-            foreach ($plugin_path as $path) {
-                if (in_array($path, $this->active_plugins) || in_array($path, $this->active_plugins_wpms)) {
-                    return true;
-                }
-            }
-        }
         return in_array($plugin_path, $this->active_plugins) || in_array($plugin_path, $this->active_plugins_wpms);
     }
 }
