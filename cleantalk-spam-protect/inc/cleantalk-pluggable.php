@@ -718,6 +718,10 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
             'mailpoet', // Mailpoet has direct integration
             'wpcommunity_auth_login', // WPCommunity login
             'submit_nex_form', // NEXForms has direct integration
+            'rnoc_track_user_data', // service request
+            'fl_builder_subscribe_form_submit', // FLBuilderForms has direct integration
+            'tutor_pro_social_authentication', // Tutor Pro social authentication, we trust a third-party service
+            'drplus_login', // Doctor Plus theme login
         );
 
         // Skip test if
@@ -943,11 +947,20 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
              is_admin() ) {
             return 'w2dc_skipped';
         }
-        if ( (apbct_is_plugin_active('elementor/elementor.php') || apbct_is_plugin_active('elementor-pro/elementor-pro.php')) &&
-             TT::toString(Post::get('actions_save_builder_action')) === 'save_builder' &&
-             is_admin() ) {
+
+        // Elementor actions and widgets
+        if (
+            (apbct_is_plugin_active('elementor/elementor.php') || apbct_is_plugin_active('elementor-pro/elementor-pro.php')) &&
+            (
+                // elementor builder action
+                (Post::getString('actions_save_builder_action') === 'save_builder' && is_admin()) ||
+                // elementor login widget WooCommerce for checkout
+                (Post::getString('action') === 'elementor_woocommerce_checkout_login_user')
+            )
+        ) {
             return 'elementor_skip';
         }
+
         // Enfold theme saving settings
         if ( apbct_is_theme_active('Enfold') &&
              TT::toString(Post::get('action')) === 'avia_ajax_save_options_page' ) {
@@ -1040,7 +1053,7 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
         // GiveWP - having the direct integration
         if (
             (apbct_is_plugin_active('give/give.php') &&
-            TT::toString(Post::get('action')) === 'give_process_donation')
+             Post::getString('action') === 'give_process_donation')
         ) {
             return 'GiveWP';
         }
@@ -1124,6 +1137,14 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
             Post::get('action') === 'wati_cartflows_save_cart_abandonment_data'
         ) {
             return 'WooCommerce addon Wati add to cart trigger skip';
+        }
+
+        //Skip WooCommerce addon - Abandoned Cart Recovery for WooCommerce
+        if (
+            apbct_is_plugin_active('woocommerce/woocommerce.php') &&
+            Post::getString('action') === 'fc_ab_cart_update_cart_data'
+        ) {
+            return 'WooCommerce addon Abandoned Cart Recovery skip';
         }
 
         //Skip RegistrationMagic service request
@@ -1620,6 +1641,40 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
         ) {
             return 'Fluent Booking Pro skip';
         }
+
+        // Gwolle Guestbook have the direct integration
+        if (
+            apbct_is_plugin_active('gwolle-gb/gwolle-gb.php') &&
+            Post::getString('action') === 'gwolle_gb_form_ajax' &&
+            Post::getString('gwolle_gb_function') === 'add_entry'
+        ) {
+            return 'Gwolle Guestbook';
+        }
+
+        // Newsletter Automated skip testing newsletter from admins
+        if (
+            apbct_is_plugin_active('newsletter-automated/automated.php') &&
+            Post::getString('action') === 'tnpc_test'
+        ) {
+            return 'Newsletter Automated skip';
+        }
+
+        if (
+            apbct_is_plugin_active('woo-mailerlite/woo-mailerlite.php') &&
+            (
+                Post::getString('action') === 'save_data' ||
+                Post::getString('action') === 'woo_mailerlite_set_cart_email'
+            )
+        ) {
+            return 'woo_mailerlite service request';
+        }
+
+        if (
+            apbct_is_plugin_active('spoki/spoki.php') &&
+            Post::equal('action', 'spoki_cartflows_save_cart_abandonment_data')
+        ) {
+            return 'spoki_abandoned_card_for_woocommerce';
+        }
     } else {
         /*****************************************/
         /*  Here is non-ajax requests skipping   */
@@ -1635,6 +1690,11 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
         if ( apbct_is_plugin_active('woocommerce/woocommerce.php') &&
              apbct_is_in_uri('wc-api=2checkout_ipn_convert_plus') ) {
             return 'wc-payment-api';
+        }
+        // WC experimental calc totals
+        if ( apbct_is_plugin_active('woocommerce/woocommerce.php') &&
+             apbct_is_in_uri('__experimental_calc_totals=true') ) {
+            return 'WC experimental calc totals';
         }
         // BuddyPress edit profile checking skip
         if ( apbct_is_plugin_active('buddypress/bp-loader.php') &&
@@ -1850,6 +1910,11 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
             return 'Plugin Name: SureForms skip fields checks';
         }
 
+        // Plugin Name: WPRecipeMaker
+        if ( apbct_is_plugin_active('wp-recipe-maker-premium/wp-recipe-maker-premium.php') && apbct_is_in_uri('/wp-recipe-maker/v1/user-rating/')) {
+            return 'Plugin Name: WPRecipeMaker skip fields checks';
+        }
+
         // skip AsgarosForum - has direct integration
         if (
             apbct_is_plugin_active('asgaros-forum/asgaros-forum.php') &&
@@ -1926,6 +1991,14 @@ function apbct_is_skip_request($ajax = false, $ajax_message_obj = array())
         Post::get('form_data')
     ) {
         return 'Otter Blocks';
+    }
+
+    // Nex Forms have the direct integration
+    if (
+        apbct_is_plugin_active('nex-forms/main.php') &&
+        Post::get('action') === 'submit_nex_form'
+    ) {
+        return 'Nex Forms';
     }
 
     return false;

@@ -427,39 +427,57 @@ function apbct_exclusions_check__url()
             $exclusions = explode(',', $apbct->settings['exclusions__urls']);
         }
 
+        //default haystack is request_uri
+        $url_haystack = Server::getString('REQUEST_URI');
+
+        /**
+         * Fix for AJAX and WP REST API forms
+         */
+        // case for admin-ajax routes, may contain get params(!)
+        $is_admin_ajax_like = stripos(Server::getString('REQUEST_URI'), '/wp-admin/admin-ajax.php') === 0;
+        // case for woocommerce-ajax routes, may contain get params(!)
+        $is_wc_ajax_like = stripos(Server::getString('REQUEST_URI'), '/?wc-ajax=') === 0;
+        // case for wp-json paths
+        $is_wp_json_like = stripos(Server::getString('REQUEST_URI'), '/wp-json/') === 0;
+        // case for rest paths
         $rest_url_only_path = apbct_get_rest_url_only_path();
-        // Fix for AJAX and WP REST API forms
-        $haystack =
+        $is_rest_only_path =  $rest_url_only_path !== 'index.php' && stripos(Server::getString('REQUEST_URI'), $rest_url_only_path) === 0;
+
+        // if need to use http referrer as haystack
+        $do_use_http_referrer = (
+            Server::getString('HTTP_REFERER')  &&
             (
-                Server::get('REQUEST_URI') === '/wp-admin/admin-ajax.php' ||
-                stripos(TT::toString(Server::getString('REQUEST_URI')), '/wp-json/') === 0 ||
-                (
-                    $rest_url_only_path !== 'index.php' &&
-                    stripos(TT::toString(Server::getString('REQUEST_URI')), $rest_url_only_path) === 0
-                )
-            ) &&
-            TT::toString(Server::get('HTTP_REFERER'))
-            ? str_ireplace(
+                $is_admin_ajax_like ||
+                $is_wc_ajax_like ||
+                $is_wp_json_like ||
+                $is_rest_only_path
+            )
+        );
+
+        // do combine actions from referrer if so
+        if ($do_use_http_referrer) {
+            $url_haystack = str_ireplace(
                 array('http://', 'https://', strval(TT::toString(Server::get('HTTP_HOST')))),
                 '',
-                TT::toString(Server::get('HTTP_REFERER'))
-            )
-            : TT::toString(Server::get('REQUEST_URI'));
-
-        if ( $apbct->data['check_exclusion_as_url'] ) {
-            $protocol = ! in_array(Server::get('HTTPS'), ['off', '']) || Server::get('SERVER_PORT') == 443 ? 'https://' : 'http://';
-            $haystack = $protocol . TT::toString(Server::get('SERVER_NAME')) . TT::toString($haystack);
+                Server::getString('HTTP_REFERER')
+            );
         }
 
-        $haystack = TT::toString($haystack);
+        // if exclusions is full-url like, modify haystack to being full-url also
+        if ( $apbct->data['check_exclusion_as_url'] ) {
+            $protocol = ! in_array(Server::get('HTTPS'), ['off', '']) || Server::get('SERVER_PORT') == 443 ? 'https://' : 'http://';
+            $url_haystack = $protocol . TT::toString(Server::get('SERVER_NAME')) . TT::toString($url_haystack);
+        }
+
+        $url_haystack = TT::toString($url_haystack);
 
         foreach ( $exclusions as $exclusion ) {
             if (
                 (
                     $apbct->settings['exclusions__urls__use_regexp'] &&
-                    preg_match('@' . $exclusion . '@', $haystack) === 1
+                    preg_match('@' . $exclusion . '@', $url_haystack) === 1
                 ) ||
-                stripos($haystack, $exclusion) !== false
+                stripos($url_haystack, $exclusion) !== false
             ) {
                 return true;
             }
@@ -701,7 +719,7 @@ function apbct_get_pixel_url($direct_call = false)
         . Helper::timeGetIntervalStart(3600 * 3) // Unique for every 3 hours
     );
 
-    //get params for caсhe plugins exclusion detection
+    //get params for cache plugins exclusion detection
     $cache_plugins_detected = apbct_is_cache_plugins_exists(true);
     $cache_exclusion_snippet = '';
     if ( !empty($cache_plugins_detected) ) {
@@ -1318,7 +1336,10 @@ function apbct__change_type_website_field($fields)
     global $apbct;
 
     if ( isset($apbct->settings['comments__hide_website_field']) && $apbct->settings['comments__hide_website_field'] ) {
-        if ( isset($fields['url']) && $fields['url'] ) {
+        if (
+            !empty($fields['url']) &&
+            strpos($fields['url'], 'input id=') !== false
+        ) {
             $fields['url'] = '<input id="honeypot-field-url" style="display: none;" autocomplete="off" name="url" type="text" value="" size="30" maxlength="200" />';
         }
         $theme = wp_get_theme();
@@ -1664,8 +1685,10 @@ function apbct_clear_superglobal_service_data($superglobal, $type)
     switch ($type) {
         case 'post':
             // Magnesium Quiz special $_request clearance || Uni CPO
-            if ((apbct_is_plugin_active('magnesium-quiz/magnesium-quiz.php')) ||
-                (apbct_is_plugin_active('uni-woo-custom-product-options/uni-cpo.php'))
+            if (
+                (apbct_is_plugin_active('magnesium-quiz/magnesium-quiz.php')) ||
+                (apbct_is_plugin_active('uni-woo-custom-product-options/uni-cpo.php')) ||
+                (apbct_is_plugin_active('nex-forms/main.php'))
             ) {
                 $fields_to_clear[] = 'ct_bot_detector_event_token';
                 $fields_to_clear[] = 'ct_no_cookie_hidden_field';
@@ -1676,10 +1699,10 @@ function apbct_clear_superglobal_service_data($superglobal, $type)
             break;
         case 'request':
             //Optima Express special $_request clearance
-            if ((apbct_is_plugin_active('optima-express/iHomefinder.php'))) {
+            if ( (apbct_is_plugin_active('optima-express/iHomefinder.php')) ) {
                 $fields_to_clear[] = 'ct_no_cookie_hidden_field';
             }
-            if ((apbct_is_plugin_active('uni-woo-custom-product-options/uni-cpo.php'))) {
+            if ( (apbct_is_plugin_active('uni-woo-custom-product-options/uni-cpo.php')) ) {
                 $fields_to_clear[] = 'ct_bot_detector_event_token';
                 $fields_to_clear[] = 'ct_no_cookie_hidden_field';
                 $fields_to_clear[] = 'apbct_event_id';
@@ -1756,16 +1779,19 @@ function apbct_is_amp_request()
  */
 function apbct_get_event_token($params)
 {
-    $event_token_from_request = ! empty(Post::get('ct_bot_detector_event_token'))
-        ? Post::get('ct_bot_detector_event_token')
-        : Cookie::get('ct_bot_detector_event_token');
-    $event_token_from_params = ! empty($params['event_token'])
-        ? $params['event_token']
-        : '';
+    global $ct_rest_middleware_event_token;
 
-    return  $event_token_from_params
-        ? TT::toString($event_token_from_params)
-        : TT::toString($event_token_from_request);
+    if (!empty($params['event_token'])) {
+        return TT::toString($params['event_token']);
+    }
+
+    if (isset($ct_rest_middleware_event_token) && !empty($ct_rest_middleware_event_token)) {
+        return TT::toString($ct_rest_middleware_event_token);
+    }
+
+    return !empty(Post::getString('ct_bot_detector_event_token'))
+        ? Post::getString('ct_bot_detector_event_token')
+        : Cookie::getString('ct_bot_detector_event_token');
 }
 
 /**

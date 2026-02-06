@@ -34,7 +34,7 @@ function apbct_settings__footer()
                 'user_token' => $apbct->user_token
             )
         )],
-        ['text' => __('doBoard - online project management', 'cleantalk-spam-protect'), 'url' => LinkConstructor::buildCleanTalkLink(
+        ['text' => __('Online tasks tracker', 'cleantalk-spam-protect'), 'url' => LinkConstructor::buildCleanTalkLink(
             'settings_footer__doboard_link',
             '',
             array(),
@@ -42,7 +42,8 @@ function apbct_settings__footer()
         )],
     ];
     $block2_links = [
-        ['text' => 'Security plugin by CleanTalk', 'url' => admin_url('plugin-install.php') . '?s=spbct&tab=search&type=term']
+        ['text' => 'Security plugin by CleanTalk', 'url' => admin_url('plugin-install.php') . '?s=spbct&tab=search&type=term'],
+        ['text' => esc_html__('Forms to CRM / Gravity Add-On'), 'url' => admin_url('plugin-install.php') . '?s=cleantalk-doboard-add-on-for-gravity-forms&tab=search&type=term'],
     ];
 
     ?>
@@ -123,19 +124,14 @@ function apbct_settings__footer()
         }
         .apbct_footer {
             display: flex;
-            justify-content: center;
-            gap: 150px;
+            gap: 100px;
             margin-bottom: 20px;
-        }
-        .apbct_footer_header{
-                justify-content: center;
         }
         .apbct_footer_column {
             margin-bottom: 13px;
         }
         .apbct_footer_column h3 {
             margin-bottom: 1em;
-            text-align: center;
             color: #3c434a;
         }
         .apbct_footer_links {

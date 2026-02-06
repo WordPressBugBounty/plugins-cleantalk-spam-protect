@@ -68,7 +68,7 @@ class SummaryAndSupportRenderer
             __('Summary'),
             __('Statistics'),
             $this->renderStatistics(), // Statistics will be rendered here
-            __('Sever requirements check'),
+            __('Server requirements check'),
             $this->renderServerRequirements(), // Server requirements will be rendered here
             __('Connections'),
             $this->renderConnectionReports(), // Connection reports will be rendered here
@@ -175,7 +175,7 @@ class SummaryAndSupportRenderer
             : __('unknown', 'cleantalk-spam-protect');
 
         $time = isset($this->apbct->stats['last_request']['time']) && $this->apbct->stats['last_request']['time']
-            ? date('M d Y H:i:s', $this->apbct->stats['last_request']['time'])
+            ? wp_date('M d Y H:i:s', $this->apbct->stats['last_request']['time'])
             : __('unknown', 'cleantalk-spam-protect');
 
         $html = sprintf(
@@ -231,7 +231,7 @@ class SummaryAndSupportRenderer
             : __('unknown', 'cleantalk-spam-protect');
 
         $last_sfw_block_time = isset($this->apbct->stats['last_sfw_block']['time']) && $this->apbct->stats['last_sfw_block']['time']
-            ? date('M d Y H:i:s', $this->apbct->stats['last_sfw_block']['time'])
+            ? wp_date('M d Y H:i:s', $this->apbct->stats['last_sfw_block']['time'])
             : __('unknown', 'cleantalk-spam-protect');
 
         $html = sprintf(
@@ -251,7 +251,7 @@ class SummaryAndSupportRenderer
     private function renderSfwUpdate()
     {
         $last_update_time = isset($this->apbct->stats['sfw']['last_update_time']) && $this->apbct->stats['sfw']['last_update_time']
-            ? date('M d Y H:i:s', $this->apbct->stats['sfw']['last_update_time'])
+            ? wp_date('M d Y H:i:s', $this->apbct->stats['sfw']['last_update_time'])
             : __('unknown', 'cleantalk-spam-protect');
 
         $html = sprintf(
@@ -275,7 +275,7 @@ class SummaryAndSupportRenderer
     private function renderSfwLogs()
     {
         $last_send_time = $this->apbct->stats['sfw']['last_send_time']
-            ? date('M d Y H:i:s', $this->apbct->stats['sfw']['last_send_time'])
+            ? wp_date('M d Y H:i:s', $this->apbct->stats['sfw']['last_send_time'])
             : __('unknown', 'cleantalk-spam-protect');
 
         $html = sprintf(
@@ -371,7 +371,7 @@ class SummaryAndSupportRenderer
 
         foreach ($requirement_items as $key => $item) {
             $value = $requirements_data[$key];
-            if ($key === 'curl_support' || $key === 'allow_url_fopen') {
+            if ($key === 'curl_support' || $key === 'allow_url_fopen' || $key === 'curl_multi_funcs_array') {
                 $value = $value ? __('enabled', 'cleantalk-spam-protect') : __('disabled', 'cleantalk-spam-protect');
             }
             $label = sprintf(__($item['label'], 'cleantalk-spam-protect'), $value);
@@ -392,7 +392,7 @@ class SummaryAndSupportRenderer
                         : ' apbct-green apbct-icon-ok'
                 )
             );
-            $render .= $this->wrapListItem('<span>' . $label . $warn_text . '</span><span ' . $icon_right_style . '></span>');
+            $render .= $this->wrapListItem('<span>' . $label . '<span ' . $icon_right_style . '></span>' . $warn_text . '</span>');
         }
 
         if (!empty($warnings)) {

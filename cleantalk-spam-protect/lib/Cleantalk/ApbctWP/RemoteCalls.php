@@ -18,6 +18,12 @@ class RemoteCalls
         'post_api_key',
     ];
 
+    private static $sensitiveData = [
+        'user_token',
+        'salt',
+        'apikey'
+    ];
+
     /**
      * Checking if the current request is the Remote Call
      *
@@ -50,11 +56,14 @@ class RemoteCalls
             'netserv3.cleantalk.org',
             'netserv4.cleantalk.org',
         ];
-
+        // Resolve IP of the client making the request and verify hostname from it to be in the list of RC servers hostnames
+        $client_ip = Helper::ipGet('remote_addr');
+        $verified_hostname = $client_ip ? \Cleantalk\Common\Helper::ipResolve($client_ip) : false;
         $is_noc_request = ! $apbct->key_is_ok &&
             Request::get('spbc_remote_call_action') &&
             in_array(Request::get('plugin_name'), array('antispam', 'anti-spam', 'apbct')) &&
-            in_array(Helper::ipResolve(Helper::ipGet('remote_addr')), $rc_servers, true);
+            $verified_hostname !== false &&
+            in_array($verified_hostname, $rc_servers, true);
 
         // no token needs for this action, at least for now
         // todo Probably we still need to validate this, consult with analytics team
@@ -138,6 +147,29 @@ class RemoteCalls
         if ( $out ) {
             die($out);
         }
+    }
+
+    /**
+     * Update license
+     *
+     * @return string
+     */
+    public static function action__update_license() // phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps
+    {
+        if ( ! headers_sent() ) {
+            header("Content-Type: application/json");
+        }
+
+        if (function_exists('apbct_settings__sync')) {
+            require_once APBCT_DIR_PATH . 'inc/cleantalk-settings.php';
+        }
+
+        $result = apbct_settings__sync(true);
+        if ( ! empty($result['error']) ) {
+            die(json_encode(['ERROR' => json_encode($result['error'])]));
+        }
+
+        die(json_encode(['OK' => true]));
     }
 
     /**
@@ -351,6 +383,7 @@ class RemoteCalls
             }
         });
 
+        $out = static::hideSensitiveData($out);
 
         $out = print_r($out, true);
         $out = str_replace("\n", "<br>", $out);
@@ -596,5 +629,41 @@ class RemoteCalls
                 $token === strtolower(md5($value_for_token)) ||
                 $token === strtolower(hash('sha256', $value_for_token))
             );
+    }
+
+    private static function hideSensitiveData($data)
+    {
+        if ( ! is_array($data) ) {
+            return $data;
+        }
+
+        foreach ( $data as $key => $value ) {
+            if ( is_array($value) ) {
+                $data[$key] = self::hideSensitiveData($value);
+            }
+
+            if ( is_string($value) ) {
+                $need_to_hide_this_string = false;
+                foreach ( static::$sensitiveData as $sensitive_name ) {
+                    if ( strpos($key, $sensitive_name) !== false ) {
+                        $need_to_hide_this_string = true;
+                    }
+                }
+                if ( $need_to_hide_this_string ) {
+                    $length = strlen($value);
+                    if ($length <= 4) {
+                        $data[$key] = str_repeat('*', $length);
+                        continue;
+                    }
+
+                    $first = substr($value, 0, 2);
+                    $last = substr($value, -2);
+                    $stars = str_repeat('*', $length - 4);
+
+                    $data[$key] = $first . $stars . $last;
+                }
+            }
+        }
+        return $data;
     }
 }

@@ -99,7 +99,7 @@ $apbct_active_integrations = array(
         'ajax'    => false
     ),
     'GiveWP' => array(
-        'hook'    => 'give_checkout_error_checks',
+        'hook'    => ['give_checkout_error_checks','givewp_donation_form_fields_validated'],
         'setting' => 'forms__contact_forms_test',
         'ajax'    => false
     ),
@@ -449,7 +449,7 @@ $apbct_active_integrations = array(
         'ajax'    => false
     ),
     'WPFunnels'         => array(
-        'hook'    => 'wpfnl_gutenberg_optin_submission',
+        'hook'    => ['wpfnl_gutenberg_optin_submission','wffn_submit_custom_optin_form'],
         'setting' => 'forms__contact_forms_test',
         'ajax'    => true
     ),
@@ -465,6 +465,26 @@ $apbct_active_integrations = array(
     ),
     'NEXForms' => array(
         'hook'    => 'submit_nex_form',
+        'setting' => 'forms__contact_forms_test',
+        'ajax'    => true
+    ),
+    'GwolleGuestbook' => array(
+        'hook'    => 'gwolle_gb_new_entry_frontend',
+        'setting' => 'forms__contact_forms_test',
+        'ajax'    => false
+    ),
+    'FLBuilderForms' => array(
+        'hook'    => 'fl_builder_subscribe_form_submit',
+        'setting' => 'forms__contact_forms_test',
+        'ajax'    => true
+    ),
+    'BitForm' => array(
+        'hook'    => 'bitform_filter_form_validation',
+        'setting' => 'forms__contact_forms_test',
+        'ajax'    => false
+    ),
+    'NinjaForms' => array(
+        'hook'    => ['ninja_forms_ajax_submit', 'nf_ajax_submit', 'forms_process', 'ninja_forms_display_after_form'],
         'setting' => 'forms__contact_forms_test',
         'ajax'    => true
     ),
