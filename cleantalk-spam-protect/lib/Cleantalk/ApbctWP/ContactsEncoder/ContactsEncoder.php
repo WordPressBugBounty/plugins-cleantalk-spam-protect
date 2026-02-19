@@ -46,6 +46,8 @@ class ContactsEncoder extends \Cleantalk\Common\ContactsEncoder\ContactsEncoder
         $this->shortcodes = new ShortCodesService($params);
 
         $this->shortcodes->registerAll();
+        $this->shortcodes->addActionsAfterModify('the_content', 11);
+        $this->shortcodes->addActionsAfterModify('the_title', 11);
 
         $this->registerHookHandler();
     }
@@ -88,8 +90,6 @@ class ContactsEncoder extends \Cleantalk\Common\ContactsEncoder\ContactsEncoder
         } else {
             foreach ( $hooks_to_encode as $hook ) {
                 $this->shortcodes->addActionsBeforeModify($hook, 9);
-                //any hook that has actions BEFORE modify, must have actions AFTER
-                $this->shortcodes->addActionsAfterModify($hook, 999);
                 add_filter($hook, array($this, 'modifyContent'), 10);
             }
         }

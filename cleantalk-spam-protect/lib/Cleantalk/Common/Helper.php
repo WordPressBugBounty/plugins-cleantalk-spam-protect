@@ -538,8 +538,7 @@ class Helper
     public static function ipResolve($ip)
     {
         // Validate IP first
-        $ip_version = self::ipValidate($ip);
-        if (!$ip_version) {
+        if (!self::ipValidate($ip)) {
             return false;
         }
 
@@ -551,41 +550,20 @@ class Helper
             return false;
         }
 
-        // Forward DNS lookup - use dns_get_record() to support both IPv4 (A) and IPv6 (AAAA) records
-        $record_type = ($ip_version === 'v6') ? DNS_AAAA : DNS_A;
-        $ip_field = ($ip_version === 'v6') ? 'ipv6' : 'ip';
-
-        $records = @dns_get_record($hostname, $record_type);
+        // Forward DNS lookup (A/AAAA records) - verify the hostname points back to the IP
+        $forward_ips = gethostbynamel($hostname);
 
         // If forward lookup fails, we can't verify
-        if (empty($records)) {
-            return false;
-        }
-
-        // Extract IPs from DNS records
-        $forward_ips = array();
-        foreach ($records as $record) {
-            if (isset($record[$ip_field])) {
-                $forward_ips[] = $record[$ip_field];
-            }
-        }
-
-        if (empty($forward_ips)) {
+        if (!$forward_ips) {
             return false;
         }
 
         // Check if the original IP is in the list of IPs the hostname resolves to
-        if ($ip_version === 'v6') {
-            $normalized_ip = self::ipV6Normalize($ip);
-            foreach ($forward_ips as $forward_ip) {
-                if (self::ipV6Normalize($forward_ip) === $normalized_ip) {
-                    return $hostname;
-                }
-            }
-        } elseif (in_array($ip, $forward_ips, true)) {
+        if (in_array($ip, $forward_ips, true)) {
             return $hostname;
         }
 
+        // FCrDNS verification failed - possible PTR spoofing attempt
         return false;
     }
 
@@ -657,7 +635,6 @@ class Helper
      * @param array $urls Array of URLs to requests
      *
      * @return array|bool
-     * @psalm-suppress PossiblyUnusedMethod
      */
     public static function httpMultiRequest($urls, $write_to = '')
     {

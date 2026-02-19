@@ -21,7 +21,7 @@ class JsErrorsReport
             return false;
         }
 
-        $to = "pluginreports@cleantalk.org";
+        $to = "support@cleantalk.org";
         $subject = "JS errors report for " . TT::toString(Server::get('HTTP_HOST'));
         $message = '
             <html lang="en">
