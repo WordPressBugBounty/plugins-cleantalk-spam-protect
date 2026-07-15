@@ -61,15 +61,7 @@ class Activator
             }
 
             // Additional options
-            $redirect_url = $apbct->settings_link;
-            if (
-                empty($apbct->api_key) &&
-                empty($apbct->moderate_ip) &&
-                empty($apbct->data['ip_license'])
-            ) {
-                $redirect_url .= '&signup_wizard=1';
-            }
-            add_option('ct_plugin_do_activation_redirect', $redirect_url);
+            add_option('ct_plugin_do_activation_redirect', true);
             apbct_add_admin_ip_to_swf_whitelist(null);
         } else {
             // Do actions for the new blog created

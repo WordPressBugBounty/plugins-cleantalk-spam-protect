@@ -3,7 +3,6 @@
 namespace Cleantalk\Antispam\Integrations;
 
 use Cleantalk\ApbctWP\Variables\Get;
-use Cleantalk\ApbctWP\Variables\Post;
 
 class Amelia extends IntegrationBase
 {
@@ -11,7 +10,11 @@ class Amelia extends IntegrationBase
     {
         $call = Get::getString('call');
 
-        return $call === '/bookings' || $call === '/payment/wc';
+        if ( $call !== '/bookings' ) {
+            return false;
+        }
+
+        return true;
     }
 
     public function getDataForChecking($argument)
@@ -39,20 +42,7 @@ class Amelia extends IntegrationBase
             return null;
         }
 
-        $event_token = ! empty($payload['ct_bot_detector_event_token'])
-            ? (string) $payload['ct_bot_detector_event_token']
-            : Post::getString('ct_bot_detector_event_token');
-
-        if ( isset($payload['ct_no_cookie_hidden_field']) ) {
-            apbct_form__get_no_cookie_data(
-                ['ct_no_cookie_hidden_field' => $payload['ct_no_cookie_hidden_field']]
-            );
-        }
-
-        return array(
-            'email'       => $email,
-            'event_token' => $event_token,
-        );
+        return array('email' => $email);
     }
 
     public function doBlock($message)

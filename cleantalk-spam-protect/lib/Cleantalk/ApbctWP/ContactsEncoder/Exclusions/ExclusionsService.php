@@ -43,10 +43,6 @@ class ExclusionsService extends \Cleantalk\Common\ContactsEncoder\Exclusions\Exc
 
     public function doReturnContentBeforeModify($content)
     {
-        if ( $this->byDecoderPassedCookie() ) {
-            return 'byDecoderPassedCookie';
-        }
-
         if ( $this->byUrlOnHooks() ) {
             return 'byUrlOnHooks';
         }
@@ -56,43 +52,6 @@ class ExclusionsService extends \Cleantalk\Common\ContactsEncoder\Exclusions\Exc
         }
 
         return parent::doReturnContentBeforeModify($content);
-    }
-
-    /**
-     * Exclusions for shortcode placeholder pipeline.
-     * Unlike doReturnContentBeforeModify(), not blocked when global email/phone encoding is off.
-     *
-     * @param string $content
-     *
-     * @return string|false
-     */
-    public function doReturnShortcodeContentBeforeModify($content)
-    {
-        if ( $this->byUrlOnHooks() ) {
-            return 'byUrlOnHooks';
-        }
-
-        if ( $this->byContentSigns($content) ) {
-            return 'byContentSigns';
-        }
-
-        if ( $this->byLoggedIn() ) {
-            return 'byLoggedIn';
-        }
-
-        if ( empty($content) || ! is_string($content) ) {
-            return 'byEmptyContent';
-        }
-
-        return false;
-    }
-
-    /**
-     * @return bool
-     */
-    protected function byLoggedIn()
-    {
-        return $this->params->is_logged_in;
     }
 
     /**
@@ -131,6 +90,12 @@ class ExclusionsService extends \Cleantalk\Common\ContactsEncoder\Exclusions\Exc
      */
     private function byServerVars()
     {
+        // Excluded request by alt cookie
+        $apbct_email_encoder_passed = Cookie::get('apbct_email_encoder_passed');
+        if ( $apbct_email_encoder_passed === apbct_get_email_encoder_pass_key() ) {
+            return true;
+        }
+
         if (
             apbct_is_plugin_active('ultimate-member/ultimate-member.php') &&
             isset($_POST['um_request']) &&
@@ -142,18 +107,6 @@ class ExclusionsService extends \Cleantalk\Common\ContactsEncoder\Exclusions\Exc
         }
 
         return false;
-    }
-
-    /**
-     * User passed email encoder check — skip encoding but keep shortcode layout hooks.
-     *
-     * @return bool
-     */
-    private function byDecoderPassedCookie()
-    {
-        $apbct_email_encoder_passed = Cookie::get('apbct_email_encoder_passed');
-
-        return $apbct_email_encoder_passed === apbct_get_email_encoder_pass_key();
     }
 
     /**
