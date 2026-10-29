@@ -1,10 +1,10 @@
-=== CleanTalk Anti-Spam – Complete Spam Protection === 
+=== Anti-Spam, Spam FireWall by CleanTalk === 
 Contributors: glomberg, alexandergull, sergefcleantalk, antonv1
-Tags: anti-spam, spam protection, antispam, spam, captcha
+Tags: spam, antispam, anti-spam, comments, firewall
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 7.2
-Stable tag: 6.90
+Stable tag: 6.91
 License: GPLv2
 
 Advanced antispam for comments, registrations & contact forms. No CAPTCHA, plus email validation and honeypot. We catch spam others miss!
@@ -22,11 +22,11 @@ Advanced antispam for comments, registrations & contact forms. No CAPTCHA, plus 
 * **Subscriptions and bookings** — filter unwanted and automated submissions.
 
 = ✨ More Than Just Anti-Spam = 
-* ✉️  **Real-Time Email validation**   — detects fake, disposable, and suspicious email addresses.
-* 👤 **Real Person Badge!**  — identifies and highlights real people in WordPress comments and can automatically approve legitimate, non-spam comments.
-* 🔒 **Contact Data Protection** — protects published email addresses and phone numbers from being harvested by bots.
-* 📋 **Anti-Spam Log** — shows every checked request, so you can see what was accepted or blocked and review possible false positives.
 * 🛡️ **Spam FireWall** — block known spam bots before they reach your forms.
+* ✉️  **Real-Time Email validation**   — detects fake, disposable, and suspicious email addresses.
+* 📋 **Anti-Spam Log** — shows every checked request, so you can see what was accepted or blocked and review possible false positives.
+* 🔒 **Contact Data Protection** — protects published email addresses and phone numbers from being harvested by bots.
+* 👤 **Real Person Badge!**  — identifies and highlights real people in WordPress comments and can automatically approve legitimate, non-spam comments.
 
 = 🧩 No CAPTCHA. No Puzzles. Less Friction. =
 
@@ -168,7 +168,7 @@ Spam FireWall allows blocking the most active spam bots before they get access t
  * HTTP request data are being checked in the nearly 5.8 million of the identified spam bot IPs.
  * If it is an active spam bot, the bot gets a blank page, if it is a visitor then he receives a normal page. This process is completely transparent for the visitors.
 
-All the CleanTalk Spam FireWall activity is being logged in the process of filtering.
+CleanTalk SpamFireWall is similar to Cloudflare’s DDoS protection and Bot Management solutions. However, it runs locally on your server, uses your existing hosting and DNS settings, and does not route all your HTTP/HTTPS traffic through Cloudflare’s cloud.
 
 = Spam FireWall: Anti-Flood & Anti-Crawler =
 Spam FireWall: Anti-Flood and Anti-Crawler options are intended for blocking unwanted bots, content parsing, shop goods prices parsing or aggressive website scanning bots. Learn more https://cleantalk.org/help/anti-flood-and-anti-crawler
@@ -420,8 +420,27 @@ CleanTalk stops up to 99.998% of spam bots, so you can disable other anti-spam p
 9. Plugin’s basic settings.
 10. Advanced settings to fine-tune protection for various types of forms, cache compatibility, comment moderation policies, data encoding, URL exclusions, SpamFireWall, and UX/UI settings.
 11. Real Person Badge — highlights legitimate commenters and adds a badge showing they’ve been verified as real users, not spammers. It also automatically approves legitimate, non-spam comments. 
+12. SpamFireWall in action. It blocks the most active and well-known spam bots before they reach your website’s content.
 
 == Changelog ==
+
+= 6.91 27.10.2026 =
+* Fix. Settings. Improve hide function.
+* Fix. SFW. AC/AF pass cookie value fixed. (#917)
+* Upd. Firewall. Improve fw check.
+* Fix. Settings. Getting brief fixed. (#914)
+* Fix.code.improve statement (#912)
+* Upd. Code. Editing token validation for ipv6
+* Upd. Code. Editing the definition of an authorized user
+* Fix. Code. Set cookie expires attribute fixed.
+* Fix. Anti Flood. Passed cookie fixed. (#910)
+* Fix. Integration. Brevo (Sendinblue) integration fixed. (#911)
+* Fix. Cookies. Sync event token on refresh events.
+* Fix. Alt Sessions. Removed duplicated request.
+* Fix. Contact Encoder. Fixed mobile layout.
+* Upd. Cleantalk.php. Rotate moderate. Now use CURLOPT_RESOLVE for IP instead of converting IP as string if IP is used as fallback. (#894)
+* New. Integration. LeakyPaywall plugin.
+* Fix. Code. Fix getID multi sign.
 
 = 6.90 13.10.2026 =
 * Fix. Comments checker. Feedback success message fixed. (#907)
